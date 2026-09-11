@@ -1,9 +1,16 @@
+"""Producer Agent for generating evidence-grounded candidate answers.
+
+The Producer combines the available investigation evidence into a candidate
+response for Judge review. If a previous attempt was rejected, the Producer
+also receives the previous draft and the Judge's feedback so that it can
+revise the answer accordingly.
+"""
+
 from __future__ import annotations
 
 from langchain_openai import ChatOpenAI
 
 from app.config import OPENAI_MODEL, OPENAI_REASONING_EFFORT
-
 
 producer_llm = ChatOpenAI(
     model=OPENAI_MODEL,
@@ -12,12 +19,30 @@ producer_llm = ChatOpenAI(
 
 
 def produce_candidate(
-    question: str,
-    metrics_evidence: str,
-    incident_evidence: str,
-    previous_draft: str = "",
-    judge_feedback: str = "",
+        question: str,
+        metrics_evidence: str,
+        incident_evidence: str,
+        previous_draft: str = "",
+        judge_feedback: str = "",
 ) -> str:
+    """Generate or revise a candidate investigation answer.
+
+    The Producer is constrained to the supplied evidence and must avoid
+    hallucinated facts or unsupported causal claims. When Judge feedback is
+    available, the Producer uses it to improve the previous draft.
+
+    Args:
+        question: Original incident investigation question.
+        metrics_evidence: Evidence collected by the Data Agent.
+        incident_evidence: Evidence collected by the Research Agent.
+        previous_draft: Candidate answer from the previous Producer attempt,
+            if one exists.
+        judge_feedback: Actionable feedback returned by the Judge after a
+            failed evaluation.
+
+    Returns:
+        A candidate investigation answer for Judge evaluation.
+    """
     prompt = f"""
 You are the Producer Agent.
 
@@ -50,4 +75,5 @@ RULES:
 """
 
     response = producer_llm.invoke(prompt)
+
     return str(response.content)

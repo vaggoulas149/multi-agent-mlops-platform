@@ -1,26 +1,52 @@
+"""Research Agent responsible for retrieving historical incident evidence.
+
+The agent uses an LLM with access to the incident-search tool. Its role is
+strictly evidence retrieval: it searches for relevant production incidents
+and returns only evidence grounded in the supported tool result.
+"""
+
 from __future__ import annotations
 
-from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
 from app.config import OPENAI_MODEL, OPENAI_REASONING_EFFORT
 from app.tools.incident_tools import search_incidents
 
-
-research_llm = ChatOpenAI(
+research_llm: ChatOpenAI = ChatOpenAI(
     model=OPENAI_MODEL,
     reasoning_effort=OPENAI_REASONING_EFFORT,
 )
 
-research_llm_with_tools = research_llm.bind_tools([search_incidents])
+research_llm_with_tools = research_llm.bind_tools(
+    [search_incidents]
+)
 
 
 def collect_incident_evidence(
-    question: str,
-    objective: str,
-    plan_steps: list[str],
-    metrics_evidence: str,
+        question: str,
+        objective: str,
+        plan_steps: list[str],
+        metrics_evidence: str,
 ) -> str:
+    """Collect historical incident evidence relevant to an investigation.
+
+    The Research Agent receives the original question, the Planner's
+    objective and investigation steps, and the metrics already collected by
+    the Data Agent. The LLM can then select the incident-search tool to
+    retrieve relevant operational evidence.
+
+    Args:
+        question: Original incident investigation question.
+        objective: Investigation objective produced by the Planner Agent.
+        plan_steps: Ordered investigation steps produced by the Planner Agent.
+        metrics_evidence: Metrics evidence already collected by the Data Agent.
+
+    Returns:
+        Retrieved incident evidence as a newline-separated string. If no
+        supported incident-search tool is called successfully, a fallback
+        message is returned instead.
+    """
     prompt = HumanMessage(
         content=f"""
 You are the Research Agent in an incident investigation.
@@ -53,22 +79,16 @@ RULES:
     if not response.tool_calls:
         return "No incident evidence was retrieved."
 
-    messages = [prompt, response]
     results: list[str] = []
 
     for tool_call in response.tool_calls:
         if tool_call["name"] != search_incidents.name:
             continue
 
-        tool_result = search_incidents.invoke(tool_call["args"])
-        results.append(str(tool_result))
-
-        messages.append(
-            ToolMessage(
-                content=str(tool_result),
-                tool_call_id=tool_call["id"],
-            )
+        tool_result = search_incidents.invoke(
+            tool_call["args"]
         )
+        results.append(str(tool_result))
 
     if not results:
         return "No incident evidence was retrieved."

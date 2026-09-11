@@ -1,33 +1,33 @@
+"""API tests for the FastAPI incident investigation interface.
+
+These tests verify the health endpoint, successful investigation responses,
+and request validation. The investigation workflow is mocked where needed so
+the API layer can be tested without making real LLM calls.
+"""
+
+from pytest import MonkeyPatch
 from fastapi.testclient import TestClient
 
 import app.api.main as api_module
 
-
 client = TestClient(api_module.app)
 
 
-# ---------------------------------------------------------
-# 1. Health endpoint
-# ---------------------------------------------------------
-
-def test_health():
-
+def test_health() -> None:
+    """Return HTTP 200 and an OK status from the health endpoint."""
     response = client.get("/health")
 
     assert response.status_code == 200
-
     assert response.json() == {
-        "status": "ok"
+        "status": "ok",
     }
 
 
-# ---------------------------------------------------------
-# 2. Successful investigation
-# ---------------------------------------------------------
-
-def test_investigate_success(monkeypatch):
-
-    fake_result = {
+def test_investigate_success(
+        monkeypatch: MonkeyPatch,
+) -> None:
+    """Return a successful investigation response using a mocked workflow."""
+    fake_result: dict[str, object] = {
         "question": "Why did conversion drop?",
         "objective": "Determine the likely cause.",
         "final_answer": (
@@ -40,7 +40,10 @@ def test_investigate_success(monkeypatch):
         "artifact_path": "fake/path/result.json",
     }
 
-    def fake_run_investigation(question: str):
+    def fake_run_investigation(
+            question: str,
+    ) -> dict[str, object]:
+        """Return deterministic workflow output for the API test."""
         return fake_result
 
     monkeypatch.setattr(
@@ -52,7 +55,7 @@ def test_investigate_success(monkeypatch):
     response = client.post(
         "/investigate",
         json={
-            "question": "Why did conversion drop?"
+            "question": "Why did conversion drop?",
         },
     )
 
@@ -63,23 +66,18 @@ def test_investigate_success(monkeypatch):
     assert body["judge_status"] == "PASS"
     assert body["retries"] == 1
     assert body["guardrail_status"] == "PASS"
-
     assert body["final_answer"] == (
         "Payment failures likely contributed "
         "to the conversion drop."
     )
 
 
-# ---------------------------------------------------------
-# 3. Invalid request
-# ---------------------------------------------------------
-
-def test_investigate_rejects_short_question():
-
+def test_investigate_rejects_short_question() -> None:
+    """Reject an investigation question that violates minimum length."""
     response = client.post(
         "/investigate",
         json={
-            "question": "Hi"
+            "question": "Hi",
         },
     )
 

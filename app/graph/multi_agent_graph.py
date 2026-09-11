@@ -1,25 +1,89 @@
+"""LangGraph orchestration for the multi-agent incident investigation workflow.
+
+This module defines the shared workflow state, LangGraph nodes, conditional
+routing rules, graph topology, initial state construction, and the public
+entry point used to execute an investigation.
+
+The workflow follows this high-level structure:
+
+    Planner
+        ↓
+    Data Agent
+        ↓
+    Research Agent
+        ↓
+    Producer
+        ↓
+    Judge
+      ↙   ↘
+   FAIL   PASS
+     ↓      ↓
+ Producer  Synthesizer
+     ↑      ↓
+ feedback  Output Guardrails
+              ↓
+           Persist
+              ↓
+             END
+
+Judge failures can route execution back to the Producer. This retry loop is
+bounded by MAX_RETRIES to prevent unbounded execution.
+"""
+
 from __future__ import annotations
 
 import logging
+from typing import Literal, cast
 
+from langgraph.graph import END, START, StateGraph
 from typing_extensions import TypedDict
-from langgraph.graph import StateGraph, START, END
 
-from app.config import MAX_RETRIES
-from app.agents.planner_agent import create_plan
 from app.agents.data_agent import collect_metrics
-from app.agents.research_agent import collect_incident_evidence
-from app.agents.producer_agent import produce_candidate
 from app.agents.judge_agent import judge_candidate
+from app.agents.planner_agent import create_plan
+from app.agents.producer_agent import produce_candidate
+from app.agents.research_agent import collect_incident_evidence
 from app.agents.synthesizer_agent import synthesize_final_answer
+from app.config import MAX_RETRIES
 from app.guardrails.output_guardrails import validate_final_output
 from app.persistence.result_store import save_investigation
 
-
 logger = logging.getLogger(__name__)
+
+JudgeRoute = Literal[
+    "producer",
+    "synthesizer",
+    "failed",
+]
+
+GuardrailRoute = Literal[
+    "persist",
+    "failed",
+]
+
+StateUpdate = dict[str, object]
 
 
 class MultiAgentState(TypedDict):
+    """Shared state carried through the LangGraph investigation workflow.
+
+    Attributes:
+        question: Original user investigation question.
+        objective: Investigation objective produced by the Planner.
+        plan_steps: Ordered investigation steps produced by the Planner.
+        metrics_evidence: Evidence retrieved by the Data Agent.
+        incident_evidence: Evidence retrieved by the Research Agent.
+        draft_answer: Current candidate answer produced by the Producer.
+        judge_status: Latest Judge status, typically PASS or FAIL.
+        judge_feedback: Latest feedback returned by the Judge.
+        retry_count: Number of Judge failures observed so far.
+        max_retries: Maximum number of Producer retries allowed.
+        final_answer: Final user-facing answer or failure response.
+        guardrail_status: Result of deterministic final-output validation.
+        guardrail_feedback: Feedback returned by output guardrails.
+        artifact_path: Path to the persisted investigation artifact.
+    """
+
     question: str
 
     objective: str
@@ -44,7 +108,15 @@ class MultiAgentState(TypedDict):
     artifact_path: str
 
 
-def planner_node(state: MultiAgentState):
+def planner_node(state: MultiAgentState) -> StateUpdate:
+    """Create the investigation objective and execution plan.
+
+    Args:
+        state: Current workflow state containing the user question.
+
+    Returns:
+        State updates containing the investigation objective and plan steps.
+    """
     logger.info("Running Planner Agent")
 
     plan = create_plan(state["question"])
@@ -55,7 +127,15 @@ def planner_node(state: MultiAgentState):
     }
 
 
-def data_agent_node(state: MultiAgentState):
+def data_agent_node(state: MultiAgentState) -> StateUpdate:
+    """Collect checkout metrics evidence for the investigation.
+
+    Args:
+        state: Current workflow state containing the question and plan.
+
+    Returns:
+        State update containing metrics evidence.
+    """
     logger.info("Running Data Agent")
 
     evidence = collect_metrics(
@@ -69,7 +149,15 @@ def data_agent_node(state: MultiAgentState):
     }
 
 
-def research_agent_node(state: MultiAgentState):
+def research_agent_node(state: MultiAgentState) -> StateUpdate:
+    """Collect historical incident evidence relevant to the investigation.
+
+    Args:
+        state: Current workflow state including metrics already collected.
+
+    Returns:
+        State update containing incident evidence.
+    """
     logger.info("Running Research Agent")
 
     evidence = collect_incident_evidence(
@@ -84,7 +172,19 @@ def research_agent_node(state: MultiAgentState):
     }
 
 
-def producer_node(state: MultiAgentState):
+def producer_node(state: MultiAgentState) -> StateUpdate:
+    """Generate or revise the candidate investigation answer.
+
+    On the first attempt, the Producer receives the collected evidence.
+    On retry attempts, it also receives the previous draft and Judge
+    feedback so that it can make a targeted revision.
+
+    Args:
+        state: Current workflow state and accumulated investigation evidence.
+
+    Returns:
+        State update containing the latest candidate answer.
+    """
     logger.info(
         "Running Producer Agent (retry_count=%s)",
         state["retry_count"],
@@ -103,7 +203,18 @@ def producer_node(state: MultiAgentState):
     }
 
 
-def judge_node(state: MultiAgentState):
+def judge_node(state: MultiAgentState) -> StateUpdate:
+    """Evaluate the current candidate answer against collected evidence.
+
+    A Judge failure increments the retry counter. Judge feedback is stored
+    in shared state so that the Producer can use it during a retry.
+
+    Args:
+        state: Current workflow state containing evidence and candidate answer.
+
+    Returns:
+        State updates containing Judge status, feedback, and retry count.
+    """
     logger.info("Running Judge Agent")
 
     result = judge_candidate(
@@ -125,7 +236,19 @@ def judge_node(state: MultiAgentState):
     }
 
 
-def route_after_judge(state: MultiAgentState):
+def route_after_judge(state: MultiAgentState) -> JudgeRoute:
+    """Select the next workflow node after Judge evaluation.
+
+    A passing candidate continues to synthesis. A failing candidate returns
+    to the Producer while retries remain. Once the retry budget has been
+    exhausted, execution moves to the failed branch.
+
+    Args:
+        state: Current workflow state after Judge evaluation.
+
+    Returns:
+        Name of the next LangGraph node.
+    """
     if state["judge_status"] == "PASS":
         return "synthesizer"
 
@@ -135,7 +258,15 @@ def route_after_judge(state: MultiAgentState):
     return "failed"
 
 
-def synthesizer_node(state: MultiAgentState):
+def synthesizer_node(state: MultiAgentState) -> StateUpdate:
+    """Convert a Judge-approved draft into the final user-facing response.
+
+    Args:
+        state: Current workflow state containing the validated draft.
+
+    Returns:
+        State update containing the synthesized final answer.
+    """
     logger.info("Running Synthesizer Agent")
 
     final_answer = synthesize_final_answer(
@@ -150,7 +281,15 @@ def synthesizer_node(state: MultiAgentState):
     }
 
 
-def output_guardrail_node(state: MultiAgentState):
+def output_guardrail_node(state: MultiAgentState) -> StateUpdate:
+    """Apply deterministic validation to the synthesized final answer.
+
+    Args:
+        state: Current workflow state containing the final answer.
+
+    Returns:
+        State updates containing guardrail status and feedback.
+    """
     logger.info("Running Output Guardrails")
 
     status, feedback = validate_final_output(
@@ -164,14 +303,35 @@ def output_guardrail_node(state: MultiAgentState):
     }
 
 
-def route_after_guardrails(state: MultiAgentState):
+def route_after_guardrails(
+        state: MultiAgentState,
+) -> GuardrailRoute:
+    """Route execution according to deterministic output validation.
+
+    Args:
+        state: Current workflow state after output guardrails have run.
+
+    Returns:
+        ``persist`` when validation passes, otherwise ``failed``.
+    """
     if state["guardrail_status"] == "PASS":
         return "persist"
 
     return "failed"
 
 
-def failed_node(state: MultiAgentState):
+def failed_node(state: MultiAgentState) -> StateUpdate:
+    """Create a controlled failure response when validation cannot succeed.
+
+    This node is reached when the Judge exhausts the retry budget or when
+    final output guardrails reject the synthesized answer.
+
+    Args:
+        state: Current workflow state at the point of failure.
+
+    Returns:
+        State update containing a safe failure response.
+    """
     logger.warning("Workflow failed validation")
 
     answer = (
@@ -185,7 +345,18 @@ def failed_node(state: MultiAgentState):
     }
 
 
-def persist_node(state: MultiAgentState):
+def persist_node(state: MultiAgentState) -> StateUpdate:
+    """Persist the completed investigation as a local artifact.
+
+    Persistence runs for both successful and failed workflow executions so
+    that the final workflow state remains inspectable.
+
+    Args:
+        state: Final workflow state to persist.
+
+    Returns:
+        State update containing the saved artifact path.
+    """
     logger.info("Persisting investigation")
 
     artifact_path = save_investigation(
@@ -219,7 +390,10 @@ graph_builder.add_node("research_agent", research_agent_node)
 graph_builder.add_node("producer", producer_node)
 graph_builder.add_node("judge", judge_node)
 graph_builder.add_node("synthesizer", synthesizer_node)
-graph_builder.add_node("output_guardrails", output_guardrail_node)
+graph_builder.add_node(
+    "output_guardrails",
+    output_guardrail_node,
+)
 graph_builder.add_node("failed", failed_node)
 graph_builder.add_node("persist", persist_node)
 
@@ -259,7 +433,20 @@ graph_builder.add_edge("persist", END)
 graph = graph_builder.compile()
 
 
-def build_initial_state(question: str) -> MultiAgentState:
+def build_initial_state(
+        question: str,
+) -> MultiAgentState:
+    """Create the initial shared state for a new investigation.
+
+    All workflow-managed fields are initialized explicitly so every node can
+    rely on a consistent state shape.
+
+    Args:
+        question: Original incident investigation question.
+
+    Returns:
+        Fully initialized MultiAgentState ready for graph execution.
+    """
     return {
         "question": question,
         "objective": "",
@@ -278,6 +465,39 @@ def build_initial_state(question: str) -> MultiAgentState:
     }
 
 
-def run_investigation(question: str) -> MultiAgentState:
+def run_investigation(
+        question: str,
+) -> MultiAgentState:
+    """Execute the complete multi-agent investigation workflow.
+
+    LangSmith-compatible run metadata is attached through the LangGraph
+    invocation config. When LangSmith tracing is enabled through environment
+    configuration, the resulting execution can be inspected as a trace.
+
+    Args:
+        question: Natural-language incident investigation question.
+
+    Returns:
+        Final workflow state after execution, validation, and persistence.
+    """
     initial_state = build_initial_state(question)
-    return graph.invoke(initial_state)
+
+    result = graph.invoke(
+        initial_state,
+        config={
+            "run_name": "incident-investigation",
+            "tags": [
+                "agentic-ai",
+                "langgraph",
+                "multi-agent",
+                "incident-investigation",
+            ],
+            "metadata": {
+                "application": "multi-agent-mlops-platform",
+                "workflow_version": "1.0",
+                "environment": "local",
+            },
+        },
+    )
+
+    return cast(MultiAgentState, result)

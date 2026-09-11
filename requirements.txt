@@ -1,7 +1,16 @@
 langchain
 langchain-openai
 langgraph
+langsmith
+
+fastapi
+uvicorn[standard]
+httpx
+
 pydantic
 python-dotenv
 typing-extensions
+
 pytest
+
+openai
