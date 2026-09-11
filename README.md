@@ -694,6 +694,20 @@ Run:
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
+PowerShell may ask you to confirm the execution-policy change.
+
+If you see a prompt similar to:
+
+[Y] Yes  [A] Yes to All  [N] No
+
+type:
+
+Y
+
+and press Enter.
+
+This change applies only to the current PowerShell window because the command uses `-Scope Process`.
+
 
 Then try activation again:
 
