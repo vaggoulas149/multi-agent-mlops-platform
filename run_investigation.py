@@ -1,4 +1,4 @@
-"""Command-line entry point for running an incident investigation.
+"""Command-line entry point for running an incident investigation!
 
 This module executes the complete multi-agent LangGraph workflow using a
 predefined incident question and prints the resulting investigation state
