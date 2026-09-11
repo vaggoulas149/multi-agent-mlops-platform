@@ -1,5 +1,29 @@
 # Multi-Agent MLOps Platform
 
+> ## Start here
+>
+> This README is designed so that you can run the project **without any prior project context**.
+>
+> If you are new to Python projects, follow the **Windows setup — follow these steps exactly** section below **one step at a time and in order**.
+>
+> You should not need any hidden setup steps beyond what is written here.
+>
+> For the easiest first run:
+>
+> - use normal **Windows PowerShell**,
+> - use a fresh `.venv`,
+> - install dependencies from `requirements.txt`,
+> - create `.env` from `.env.example`,
+> - add your own OpenAI API key,
+> - keep `LANGSMITH_TRACING=false`,
+> - run the tests,
+> - run the CLI demo,
+> - run the FastAPI app.
+>
+> If anything does not work exactly as described, please contact:
+>
+> **vaggos149@gmail.com**
+
 A small, educational **multi-agent AI incident investigation system** built with:
 
 - **LangChain**
@@ -443,29 +467,101 @@ multi-agent-mlops-platform/
 
 ---
 
-# Quick start for Windows users
+# Windows setup — follow these steps exactly
 
-The instructions below are intentionally detailed.
+This section is intentionally written for someone who is new to Python projects.
 
-They assume that you are starting from a normal Windows computer and are not already familiar with Python virtual environments.
+Use **Windows PowerShell** and follow the steps **in order**.
 
-You do **not** need PyCharm or VS Code to run the project. A normal Windows PowerShell terminal is enough.
+**Do not add extra setup steps unless one of the troubleshooting sections below explicitly tells you to do so.**
+
+The intended path is:
+
+```text
+open Windows PowerShell
+→ check Python and Git
+→ go to Documents
+→ clone the repository
+→ enter the repository folder
+→ create .venv
+→ activate .venv
+→ install dependencies
+→ copy .env.example to .env
+→ paste your OpenAI API key
+→ run tests
+→ run the CLI investigation
+→ start FastAPI
+→ test /health and /docs
+→ run POST /investigate
+```
+
+> **Important:** use the normal **Windows PowerShell**, not **Anaconda PowerShell Prompt**.
+>
+> A normal prompt looks similar to:
+>
+> ```text
+> PS C:\Users\YourName>
+> ```
+>
+> If the prompt starts with `(base)` or another Conda environment name, close that window and open the normal Windows PowerShell from the Start menu.
+
+You do **not** need PyCharm or VS Code to run this project.
 
 ---
 
-# Before you start
+## Before you start
 
 You need:
 
 1. **Git**
-2. **Python 3.12**
+2. **Python** — Python 3.12 is recommended
 3. **Internet access**
 4. **An OpenAI API key**
-5. **Optional: a LangSmith API key** if you want tracing
+5. **Optional:** a LangSmith API key, only if you want tracing
+
+### Check Python
+
+Open **Windows PowerShell** and run:
+
+```powershell
+python --version
+```
+
+Expected output is similar to:
+
+```text
+Python 3.12.x
+```
+
+A newer compatible Python version may also work.
+
+If `python` is not recognized, try:
+
+```powershell
+py --version
+```
+
+If neither command works, install Python before continuing, then close and reopen PowerShell.
+
+### Check Git
+
+Run:
+
+```powershell
+git --version
+```
+
+Expected output is similar to:
+
+```text
+git version 2.x.x
+```
+
+If `git` is not recognized, install Git before continuing, then close and reopen PowerShell.
 
 ---
 
-## Check whether Python is installed
+# Step 1 — Open Windows PowerShell
 
 Open the Windows Start menu.
 
@@ -475,69 +571,11 @@ Search for:
 Windows PowerShell
 ```
 
-Open it.
+Open **Windows PowerShell**.
 
-In the PowerShell window, run:
-
-```powershell
-python --version
-```
+Do not use **Anaconda PowerShell Prompt** for this setup.
 
 You should see something similar to:
-
-```text
-Python 3.12.x
-```
-
-If `python` is not recognized, try:
-
-```powershell
-py --version
-```
-
-If neither command works, install Python before continuing.
-
-Python 3.12 is recommended for this project.
-
----
-
-## Check whether Git is installed
-
-In the same PowerShell window, run:
-
-```powershell
-git --version
-```
-
-You should see something similar to:
-
-```text
-git version 2.x.x
-```
-
-If `git` is not recognized, install Git before continuing.
-
----
-
-# Windows PowerShell: exact setup instructions
-
-Follow these steps in order.
-
-Do not skip a step unless it is explicitly marked optional.
-
----
-
-## Step 1 — Open Windows PowerShell
-
-Open:
-
-```text
-Start Menu
-→ search "Windows PowerShell"
-→ open Windows PowerShell
-```
-
-You should see a terminal window similar to:
 
 ```text
 PS C:\Users\YourName>
@@ -545,51 +583,57 @@ PS C:\Users\YourName>
 
 ---
 
-## Step 2 — Choose where you want to download the project
+# Step 2 — Go to your Documents folder
 
-For example, to use your `Documents` folder:
+Run:
 
 ```powershell
 cd $HOME\Documents
 ```
 
-You can confirm your current location with:
+Your prompt should now look similar to:
 
-```powershell
-Get-Location
+```text
+PS C:\Users\YourName\Documents>
 ```
 
 ---
 
-## Step 3 — Clone the GitHub repository
+# Step 3 — Clone the repository
 
-Run:
+Run exactly:
 
 ```powershell
 git clone https://github.com/vaggoulas149/multi-agent-mlops-platform.git
 ```
 
-Git should download the repository.
+Wait for Git to finish downloading the project.
 
-When it finishes, enter the project folder:
+Then enter the project folder:
 
 ```powershell
 cd multi-agent-mlops-platform
 ```
 
-You can confirm that the files exist by running:
+Your prompt should now end with:
+
+```text
+\multi-agent-mlops-platform>
+```
+
+Check that the repository files are present:
 
 ```powershell
 dir
 ```
 
-You should see files and folders such as:
+You should see files and folders including:
 
 ```text
 app
 artifacts
 tests
-.env
+.env.example
 .gitignore
 README.md
 requirements.txt
@@ -597,73 +641,33 @@ run_investigation.py
 run_retry_demo.py
 ```
 
----
-
-## Step 4 — Make sure you are not inside another Python environment
-
-This step is mainly useful if you already use Conda or another Python environment manager.
-
-Look at the beginning of your PowerShell prompt.
-
-If it looks normal:
-
-```text
-PS C:\Users\YourName\Documents\multi-agent-mlops-platform>
-```
-
-continue to Step 5.
-
-If it starts with something such as:
-
-```text
-(base)
-```
-
-or:
-
-```text
-(my-environment)
-```
-
-and you are using Conda, run:
-
-```powershell
-conda deactivate
-```
-
-Repeat if necessary until the environment name disappears.
-
-If you do not use Conda, ignore this step.
+> You should **not** expect a real `.env` file yet. You will create it locally in a later step.
 
 ---
 
-## Step 5 — Create a fresh virtual environment
+# Step 4 — Create a Python virtual environment
 
-From inside the repository folder, run:
+Make sure you are still inside the repository folder.
+
+Run:
 
 ```powershell
 python -m venv .venv
 ```
 
-If your Windows installation uses the `py` launcher instead of `python`, use:
+If your computer uses the `py` launcher instead of `python`, use:
 
 ```powershell
 py -3.12 -m venv .venv
 ```
 
-This creates an isolated Python environment inside:
+This creates an isolated Python environment inside the project.
 
-```text
-.venv
-```
-
-Wait until the command finishes.
-
-It may finish without printing anything. That is normal.
+The command may finish without printing anything. That is normal.
 
 ---
 
-## Step 6 — Activate the virtual environment
+# Step 5 — Activate the virtual environment
 
 Run:
 
@@ -671,7 +675,7 @@ Run:
 .\.venv\Scripts\Activate.ps1
 ```
 
-If activation works, the beginning of the terminal prompt should change to:
+If activation worked, your prompt should start with:
 
 ```text
 (.venv)
@@ -683,25 +687,25 @@ For example:
 (.venv) PS C:\Users\YourName\Documents\multi-agent-mlops-platform>
 ```
 
-### If PowerShell blocks the activation script
+## If PowerShell says script execution is disabled
 
-If you see an error saying that script execution is disabled, run:
+Run:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-Then try again:
+Then try activation again:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-The `Process` scope applies only to the current PowerShell window.
+The `Process` scope affects only the current PowerShell window.
 
 ---
 
-## Step 7 — Upgrade pip
+# Step 6 — Upgrade pip
 
 Run:
 
@@ -709,11 +713,11 @@ Run:
 python -m pip install --upgrade pip
 ```
 
-Wait until it finishes.
+Wait until the command finishes.
 
 ---
 
-## Step 8 — Install all project dependencies
+# Step 7 — Install the project dependencies
 
 Run exactly:
 
@@ -721,95 +725,95 @@ Run exactly:
 python -m pip install -r requirements.txt
 ```
 
-Important:
+The `-r` is important.
+
+Correct:
 
 ```text
-Correct:
 python -m pip install -r requirements.txt
+```
 
-Wrong:
+Incorrect:
+
+```text
 pip install requirements.txt
 ```
 
-The `-r` tells pip to install the packages listed inside the file.
-
-Installation may take a few minutes.
+Wait until installation finishes successfully.
 
 ---
 
-# Step 9 — Create your local `.env` file and configure the API key
+# Step 8 — Create your private local `.env` file
 
-The repository does **not** contain a real `.env` file.
-
-Instead, it contains:
+The GitHub repository contains:
 
 ```text
 .env.example
 ```
 
-This is a safe template with placeholder values.
+This is only a safe template.
 
-Your real local `.env` file is intentionally ignored by Git and must never be committed.
-
-From the repository root, create your own local `.env` by copying the template:
+Create your own private `.env` file by running:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Now open your new local `.env` file:
+Now open the new file:
 
 ```powershell
 notepad .env
 ```
 
-You should see values similar to:
+---
 
-```env
-# OpenAI
-OPENAI_API_KEY=your_openai_api_key
+# Step 9 — Add your OpenAI API key
 
-# Model configuration
-OPENAI_MODEL=gpt-5.6-luna
-OPENAI_REASONING_EFFORT=none
-
-# Workflow configuration
-MAX_RETRIES=2
-
-# LangSmith tracing is optional.
-# Leave this false for the minimum setup.
-LANGSMITH_TRACING=false
-LANGSMITH_API_KEY=your_langsmith_api_key
-LANGSMITH_PROJECT=multi-agent-mlops-platform
-
-# Optional: required only for some EU LangSmith workspaces.
-# LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
-
-# Optional: add only if your LangSmith setup requires it.
-# LANGSMITH_WORKSPACE_ID=your_workspace_id
-```
-
-## Minimum configuration: OpenAI only
-
-For the easiest setup, replace:
+Inside `.env`, you will see a line like:
 
 ```env
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-with your own valid OpenAI API key.
+Replace only the placeholder:
 
-### Important: exact `.env` format
+```text
+your_openai_api_key
+```
 
-When you paste an API key into `.env`, put the value **immediately after the `=` sign**.
+with your real OpenAI API key.
 
-Do **not** add quotation marks at the beginning or end of the key.
+## Exact API-key format
 
-Use this format:
+Put the key **immediately after the `=` sign**.
+
+This format rule applies to both OpenAI and LangSmith keys.
+
+Use:
+
+```text
+NAME=value
+```
+
+Do not use:
+
+```text
+NAME = value
+NAME="value"
+NAME='value'
+```
+
+Use:
 
 ```env
-OPENAI_API_KEY=your_actual_openai_api_key_here
+OPENAI_API_KEY=your_actual_openai_api_key
 ```
+
+Do **not** add spaces around `=`.
+
+Do **not** put single quotes `'...'` around the key.
+
+Do **not** put double quotes `"..."` around the key.
 
 Correct:
 
@@ -835,225 +839,165 @@ Incorrect:
 OPENAI_API_KEY='sk-example123456789'
 ```
 
-Use the same rule for LangSmith:
-
-```env
-LANGSMITH_API_KEY=your_actual_langsmith_api_key
-```
-
-Correct:
-
-```env
-LANGSMITH_API_KEY=lsv2_example123456789
-```
-
-Incorrect:
-
-```env
-LANGSMITH_API_KEY = lsv2_example123456789
-```
-
-Incorrect:
-
-```env
-LANGSMITH_API_KEY="lsv2_example123456789"
-```
-
-Incorrect:
-
-```env
-LANGSMITH_API_KEY='lsv2_example123456789'
-```
-
-In short:
-
-```text
-KEY=value
-```
-
-not:
-
-```text
-KEY = value
-KEY="value"
-KEY='value'
-```
-
-Keep:
+For the easiest first run, keep:
 
 ```env
 LANGSMITH_TRACING=false
 ```
 
-This means LangSmith is disabled and the application can run using only the OpenAI API key.
+You do **not** need a LangSmith API key for the basic setup.
 
-You may leave this placeholder unchanged while tracing is disabled:
+You can leave:
 
 ```env
 LANGSMITH_API_KEY=your_langsmith_api_key
 ```
 
-Save the file and close Notepad.
+unchanged while `LANGSMITH_TRACING=false`.
 
-> **Security:** never send your API key to anyone and never commit your local `.env` file to Git.
-
-## Optional configuration: LangSmith tracing
-
-LangSmith is optional.
-
-If you want tracing, add your own LangSmith key:
+Your minimum working configuration should therefore look similar to:
 
 ```env
-LANGSMITH_API_KEY=your_actual_langsmith_api_key
-```
+# OpenAI
+OPENAI_API_KEY=your_actual_openai_api_key
 
-and change:
+# Model configuration
+OPENAI_MODEL=gpt-5.6-luna
+OPENAI_REASONING_EFFORT=none
 
-```env
+# Workflow configuration
+MAX_RETRIES=2
+
+# LangSmith tracing is optional.
 LANGSMITH_TRACING=false
+LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_PROJECT=multi-agent-mlops-platform
 ```
 
-to:
+Save the file in Notepad:
 
-```env
-LANGSMITH_TRACING=true
+```text
+File → Save
 ```
 
-Some LangSmith workspaces may also require a region-specific endpoint.
+Then close Notepad.
 
-For example, an EU workspace may require:
-
-```env
-LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
-```
-
-Only enable or add LangSmith configuration if you actually want tracing.
+> **Security:** never commit your real `.env` file and never share your API key. The project `.gitignore` intentionally excludes `.env`.
 
 ---
 
 # Step 10 — Run the automated tests
 
-Still inside the repository folder, and with `(.venv)` visible in the prompt, run:
+Make sure your PowerShell prompt still starts with:
+
+```text
+(.venv)
+```
+
+Run:
 
 ```powershell
 python -m pytest -v
 ```
 
-The tests should finish with all tests marked:
+A successful run should finish with all tests marked:
 
 ```text
 PASSED
 ```
 
-The test suite verifies:
+At the time of this README, the suite contains tests for:
 
-- FastAPI health endpoint
-- FastAPI investigation endpoint
-- request validation
-- output guardrails
-- Judge `FAIL` → Producer retry → Judge `PASS`
-- maximum-retry failure path
+- the FastAPI health endpoint,
+- the FastAPI investigation endpoint,
+- request validation,
+- output guardrails,
+- the Judge `FAIL` → Producer retry → Judge `PASS` path,
+- the maximum-retry failure path.
 
-Most workflow-heavy tests use mocks, so they do not need to make live LLM calls.
-
-If the tests pass, the local Python setup is working correctly.
+The workflow-heavy tests use mocks where appropriate, so they are designed to be deterministic.
 
 ---
 
 # Step 11 — Run the real multi-agent investigation
 
-Now run:
+Run:
 
 ```powershell
 python run_investigation.py
 ```
 
-This is the main command-line demonstration.
+This makes real OpenAI API calls.
 
-It runs the actual multi-agent workflow.
-
-You should see logs for components such as:
+A successful run should execute the workflow and finish with output containing sections such as:
 
 ```text
-Planner Agent
-Data Agent
-Research Agent
-Producer Agent
-Judge Agent
-Synthesizer Agent
-Output Guardrails
+OBJECTIVE
+PLAN
+METRICS EVIDENCE
+INCIDENT EVIDENCE
+JUDGE STATUS
+RETRIES
+FINAL ANSWER
+GUARDRAIL STATUS
+ARTIFACT
 ```
 
-At the end, you should see output similar to:
+A successful result should normally show:
 
 ```text
-FINAL RESULT
-
-OBJECTIVE:
-...
-
-PLAN:
-...
-
-METRICS EVIDENCE:
-...
-
-INCIDENT EVIDENCE:
-...
-
 JUDGE STATUS:
 PASS
-
-RETRIES:
-0
-
-FINAL ANSWER:
-...
-
-GUARDRAIL STATUS:
-PASS
-
-ARTIFACT:
-...
 ```
 
-The exact LLM-generated wording may vary between runs.
+and:
 
-This command makes real OpenAI API calls and may incur API usage charges.
+```text
+GUARDRAIL STATUS:
+PASS
+```
+
+The exact generated wording may vary between runs.
+
+Because this is a real LLM run, OpenAI API usage may incur a small charge.
 
 ---
 
-# Step 12 — Check the generated artifact
+# Step 12 — Check the generated JSON artifact
 
-After a successful investigation, open:
+After a successful investigation, the project stores a JSON result under:
 
 ```text
 artifacts\investigations
 ```
 
-You should see a generated JSON file with a UUID-like filename.
+From PowerShell, you can list the generated files with:
 
-For example:
+```powershell
+dir artifacts\investigations
+```
+
+You should see a JSON file with a UUID-like filename, for example:
 
 ```text
 3c39129a-1fe8-41f0-9ba5-63d805394034.json
 ```
 
-That file contains the stored investigation result.
+This confirms that local persistence worked.
 
 ---
 
 # Step 13 — Optional: run the retry demonstration
 
-To intentionally demonstrate the Judge retry path, run:
+This step is optional.
+
+Run:
 
 ```powershell
 python run_retry_demo.py
 ```
 
-The script deliberately forces the first Judge evaluation to fail.
-
-You should observe the logical flow:
+The demo deliberately forces the first Judge evaluation to fail so that you can see the retry path:
 
 ```text
 Producer
@@ -1067,21 +1011,21 @@ Producer retry
 Judge PASS
 ```
 
-This script is only a demonstration. It is not required to use the normal application.
+This is only a demonstration of the LangGraph conditional loop.
 
 ---
 
 # Step 14 — Start the FastAPI server
 
-To expose the workflow as a local HTTP API, run:
+Run:
 
 ```powershell
 python -m uvicorn app.api.main:app --reload
 ```
 
-Do not close this PowerShell window while you are using the API.
+Keep this PowerShell window open while using the API.
 
-You should see output indicating that Uvicorn is running on:
+You should see output indicating that Uvicorn is running at:
 
 ```text
 http://127.0.0.1:8000
@@ -1091,7 +1035,7 @@ http://127.0.0.1:8000
 
 # Step 15 — Check the health endpoint
 
-Open a browser.
+Open a web browser.
 
 Go to:
 
@@ -1099,7 +1043,7 @@ Go to:
 http://127.0.0.1:8000/health
 ```
 
-You should see:
+Expected response:
 
 ```json
 {
@@ -1107,21 +1051,19 @@ You should see:
 }
 ```
 
-If you see this, the FastAPI server is running.
+If you see this, the FastAPI server is running correctly.
 
 ---
 
 # Step 16 — Open Swagger
 
-In your browser, go to:
+In the browser, go to:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-This opens FastAPI's interactive Swagger UI.
-
-You should see:
+You should see the FastAPI Swagger page with:
 
 ```text
 GET /health
@@ -1132,12 +1074,11 @@ POST /investigate
 
 # Step 17 — Run an investigation from Swagger
 
-In Swagger:
+On the Swagger page:
 
-1. Find `POST /investigate`.
-2. Click it.
-3. Click **Try it out**.
-4. Replace the request body with:
+1. Click `POST /investigate`.
+2. Click **Try it out**.
+3. Replace the request body with:
 
 ```json
 {
@@ -1145,7 +1086,7 @@ In Swagger:
 }
 ```
 
-5. Click **Execute**.
+4. Click **Execute**.
 
 A successful request should return:
 
@@ -1153,7 +1094,7 @@ A successful request should return:
 200
 ```
 
-and a JSON response containing fields such as:
+The response should contain fields similar to:
 
 ```json
 {
@@ -1167,13 +1108,13 @@ and a JSON response containing fields such as:
 }
 ```
 
-The exact answer may vary because it is generated by an LLM.
+The exact LLM-generated answer can vary.
 
 ---
 
 # Step 18 — Stop the FastAPI server
 
-Go back to the PowerShell window in which Uvicorn is running.
+Return to the PowerShell window in which Uvicorn is running.
 
 Press:
 
@@ -1181,13 +1122,13 @@ Press:
 Ctrl + C
 ```
 
-The server will stop.
+The local server will stop.
 
 ---
 
-# Step 19 — Deactivate the virtual environment when finished
+# Step 19 — Deactivate the virtual environment
 
-When you are completely finished, run:
+When you are finished, run:
 
 ```powershell
 deactivate
@@ -1197,34 +1138,96 @@ The `(.venv)` prefix should disappear from the PowerShell prompt.
 
 ---
 
+# Optional — Enable LangSmith tracing
+
+The basic application does **not** require LangSmith.
+
+Only do this after the normal application works.
+
+Open `.env`:
+
+```powershell
+notepad .env
+```
+
+Replace:
+
+```env
+LANGSMITH_API_KEY=your_langsmith_api_key
+```
+
+with your real LangSmith key.
+
+Use the same strict format as the OpenAI key:
+
+```env
+LANGSMITH_API_KEY=your_actual_langsmith_api_key
+```
+
+The value must be directly after `=` with:
+
+- no spaces around `=`,
+- no single quotes,
+- no double quotes.
+
+Then change:
+
+```env
+LANGSMITH_TRACING=false
+```
+
+to:
+
+```env
+LANGSMITH_TRACING=true
+```
+
+Save the file.
+
+Some LangSmith workspaces may require an additional endpoint.
+
+For example, an EU workspace may require:
+
+```env
+LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
+```
+
+Only add this if your LangSmith account requires it.
+
+If you enable LangSmith and receive `403 Forbidden`, either verify the LangSmith account configuration or set:
+
+```env
+LANGSMITH_TRACING=false
+```
+
+to continue running the application without tracing.
+
+---
+
 # Next time you want to run the project
 
-You do **not** need to clone the repository or reinstall everything every time.
+You do **not** need to clone the repository or reinstall the dependencies again.
 
-Open Windows PowerShell and run:
+Open normal **Windows PowerShell**.
+
+Go to the project:
 
 ```powershell
 cd $HOME\Documents\multi-agent-mlops-platform
 ```
 
-Then activate the environment:
+Activate the existing virtual environment:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-Then run whichever part you want.
+Then choose what you want to run.
 
-For the command-line demo:
+For the command-line investigation:
 
 ```powershell
 python run_investigation.py
-```
-
-For the API:
-
-```powershell
-python -m uvicorn app.api.main:app --reload
 ```
 
 For the tests:
@@ -1233,51 +1236,29 @@ For the tests:
 python -m pytest -v
 ```
 
----
-
-# If you only want the shortest possible setup
-
-For an experienced Python user, the complete Windows setup is:
+For the API:
 
 ```powershell
-git clone https://github.com/vaggoulas149/multi-agent-mlops-platform.git
-cd multi-agent-mlops-platform
-
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-
-Copy-Item .env.example .env
-notepad .env
-```
-
-Add your own valid OpenAI API key to `.env`.
-
-For the minimum setup, keep:
-
-```env
-LANGSMITH_TRACING=false
-```
-
-Then:
-
-```powershell
-python -m pytest -v
-python run_investigation.py
 python -m uvicorn app.api.main:app --reload
 ```
 
-Open:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
 ---
 
-# Common problems
+# Common setup problems
+
+## PowerShell starts with `(base)`
+
+You probably opened **Anaconda PowerShell Prompt**.
+
+Close it and open the normal:
+
+```text
+Windows PowerShell
+```
+
+from the Start menu.
+
+---
 
 ## `python` is not recognized
 
@@ -1287,19 +1268,21 @@ Try:
 py --version
 ```
 
-If that works, create the environment with:
+If that works, create the virtual environment with:
 
 ```powershell
 py -3.12 -m venv .venv
 ```
 
-If neither command works, install Python.
+If neither `python` nor `py` works, install Python and reopen PowerShell.
 
 ---
 
 ## `git` is not recognized
 
-Install Git, close PowerShell, open a new PowerShell window, and retry:
+Install Git.
+
+Then close and reopen PowerShell and test:
 
 ```powershell
 git --version
@@ -1315,7 +1298,7 @@ Run:
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-Then activate the environment again:
+Then:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -1323,81 +1306,60 @@ Then activate the environment again:
 
 ---
 
-## `pip install requirements.txt` fails
+## Dependency installation fails
 
-Use:
+Make sure the virtual environment is active and run:
 
 ```powershell
 python -m pip install -r requirements.txt
 ```
 
-The `-r` is required.
+Do not use:
+
+```text
+pip install requirements.txt
+```
+
+---
+
+## `pytest` is not recognized
+
+Use:
+
+```powershell
+python -m pytest -v
+```
+
+This explicitly runs pytest through the Python interpreter in the active virtual environment.
 
 ---
 
 ## OpenAI returns `401 Unauthorized`
 
-This normally means the value in:
-
-```env
-OPENAI_API_KEY=...
-```
-
-is missing, still a placeholder, or invalid.
-
-Open your local configuration file:
+Open:
 
 ```powershell
 notepad .env
 ```
 
-and check that you inserted your own valid OpenAI API key.
-
-The line should look exactly like:
+Check that:
 
 ```env
 OPENAI_API_KEY=your_actual_openai_api_key
 ```
 
-Use no spaces around `=` and no single or double quotes around the key.
+contains your real key.
 
-If `.env` does not exist yet, create it first:
+Also make sure:
 
-```powershell
-Copy-Item .env.example .env
-```
-
----
-
-## LangSmith returns `403 Forbidden`
-
-If you do not need tracing, use:
-
-```env
-LANGSMITH_TRACING=false
-```
-
-The application can run without LangSmith.
-
-If you do want tracing, verify the LangSmith API key and account region.
-
-Also verify that the `.env` line uses the exact format:
-
-```env
-LANGSMITH_API_KEY=your_actual_langsmith_api_key
-```
-
-with no spaces around `=` and no quotation marks around the value.
-
-An EU workspace may require:
-
-```env
-LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
-```
+- there are no spaces around `=`,
+- there are no single quotes,
+- there are no double quotes,
+- the placeholder was actually replaced.
 
 ---
 
-## The configured OpenAI model is not available to your API account
+## The OpenAI model is unavailable to your API account
 
 The default configuration is:
 
@@ -1405,13 +1367,25 @@ The default configuration is:
 OPENAI_MODEL=gpt-5.6-luna
 ```
 
-If your OpenAI API account does not have access to that model, replace it with a compatible model available to your account.
+If your OpenAI API account does not have access to that model, replace it with a compatible OpenAI model available to your API account.
 
 ---
 
-## Port 8000 is already being used
+## LangSmith returns `403 Forbidden`
 
-Run Uvicorn on another port:
+If LangSmith tracing is not important for your run, use:
+
+```env
+LANGSMITH_TRACING=false
+```
+
+The application can run normally without LangSmith.
+
+---
+
+## Port `8000` is already in use
+
+Start the API on port `8001` instead:
 
 ```powershell
 python -m uvicorn app.api.main:app --reload --port 8001
@@ -1468,7 +1442,7 @@ The maximum-retry test also verifies that the workflow terminates instead of ent
 | `OPENAI_MODEL` | Yes / default provided | Model used by the agents |
 | `OPENAI_REASONING_EFFORT` | No / default provided | Reasoning configuration |
 | `MAX_RETRIES` | No / default provided | Maximum Producer retries |
-| `LANGSMITH_API_KEY` | Only for LangSmith | LangSmith authentication |
+| `LANGSMITH_API_KEY` | Optional | Required only when LangSmith tracing is enabled |
 | `LANGSMITH_TRACING` | No | Enable or disable LangSmith tracing |
 | `LANGSMITH_PROJECT` | No | LangSmith project name |
 | `LANGSMITH_ENDPOINT` | Sometimes | Region-specific LangSmith endpoint |
@@ -1591,10 +1565,22 @@ The project is intentionally small enough to understand file by file while still
 
 ---
 
+---
+
+---
+
 # Questions or setup problems?
 
-If you encounter any issue while cloning, installing, configuring, testing, or running the project, feel free to contact me directly:
+If **any** step in this README behaves differently from what is described, stop there and contact me:
 
 **vaggos149@gmail.com**
 
-I will be happy to help with the setup or guide you through the project.
+Please include:
+
+- the step number you were following,
+- the command you ran,
+- the error message or screenshot.
+
+Do not send API keys or other secrets.
+
+I can help with the setup or walk you through the project.
