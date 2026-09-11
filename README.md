@@ -435,7 +435,7 @@ multi-agent-mlops-platform/
 │
 ├── run_investigation.py
 ├── run_retry_demo.py
-├── .env
+├── .env.example
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -737,19 +737,27 @@ Installation may take a few minutes.
 
 ---
 
-# Step 9 — Configure the API keys
+# Step 9 — Create your local `.env` file and configure the API key
 
-The repository contains a file named:
+The repository does **not** contain a real `.env` file.
+
+Instead, it contains:
 
 ```text
-.env
+.env.example
 ```
 
-The `.env` file committed to GitHub contains **placeholder values only**.
+This is a safe template with placeholder values.
 
-It does not contain real credentials.
+Your real local `.env` file is intentionally ignored by Git and must never be committed.
 
-Open it directly from PowerShell:
+From the repository root, create your own local `.env` by copying the template:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Now open your new local `.env` file:
 
 ```powershell
 notepad .env
@@ -758,100 +766,160 @@ notepad .env
 You should see values similar to:
 
 ```env
-OPENAI_API_KEY='your_real_openai_key'
-LANGSMITH_API_KEY='your_real_langsmith_key'
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key
 
+# Model configuration
 OPENAI_MODEL=gpt-5.6-luna
 OPENAI_REASONING_EFFORT=none
+
+# Workflow configuration
 MAX_RETRIES=2
 
-LANGSMITH_TRACING=true
+# LangSmith tracing is optional.
+# Leave this false for the minimum setup.
+LANGSMITH_TRACING=false
+LANGSMITH_API_KEY=your_langsmith_api_key
 LANGSMITH_PROJECT=multi-agent-mlops-platform
-```
 
----
+# Optional: required only for some EU LangSmith workspaces.
+# LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
+
+# Optional: add only if your LangSmith setup requires it.
+# LANGSMITH_WORKSPACE_ID=your_workspace_id
+```
 
 ## Minimum configuration: OpenAI only
 
-To run the application with the minimum setup, you only need a valid OpenAI API key.
-
-Replace:
+For the easiest setup, replace:
 
 ```env
-OPENAI_API_KEY='your_real_openai_key'
+OPENAI_API_KEY=your_openai_api_key
 ```
 
-with your actual key.
+with your own valid OpenAI API key.
 
-For example:
+### Important: exact `.env` format
+
+When you paste an API key into `.env`, put the value **immediately after the `=` sign**.
+
+Do **not** add quotation marks at the beginning or end of the key.
+
+Use this format:
 
 ```env
-OPENAI_API_KEY='your_actual_key_here'
+OPENAI_API_KEY=your_actual_openai_api_key_here
 ```
 
-Do not share that key and do not commit it to Git.
-
-If you do **not** want to use LangSmith tracing, change:
+Correct:
 
 ```env
-LANGSMITH_TRACING=true
+OPENAI_API_KEY=sk-example123456789
+```
+
+Incorrect:
+
+```env
+OPENAI_API_KEY = sk-example123456789
+```
+
+Incorrect:
+
+```env
+OPENAI_API_KEY="sk-example123456789"
+```
+
+Incorrect:
+
+```env
+OPENAI_API_KEY='sk-example123456789'
+```
+
+Use the same rule for LangSmith:
+
+```env
+LANGSMITH_API_KEY=your_actual_langsmith_api_key
+```
+
+Correct:
+
+```env
+LANGSMITH_API_KEY=lsv2_example123456789
+```
+
+Incorrect:
+
+```env
+LANGSMITH_API_KEY = lsv2_example123456789
+```
+
+Incorrect:
+
+```env
+LANGSMITH_API_KEY="lsv2_example123456789"
+```
+
+Incorrect:
+
+```env
+LANGSMITH_API_KEY='lsv2_example123456789'
+```
+
+In short:
+
+```text
+KEY=value
+```
+
+not:
+
+```text
+KEY = value
+KEY="value"
+KEY='value'
+```
+
+Keep:
+
+```env
+LANGSMITH_TRACING=false
+```
+
+This means LangSmith is disabled and the application can run using only the OpenAI API key.
+
+You may leave this placeholder unchanged while tracing is disabled:
+
+```env
+LANGSMITH_API_KEY=your_langsmith_api_key
+```
+
+Save the file and close Notepad.
+
+> **Security:** never send your API key to anyone and never commit your local `.env` file to Git.
+
+## Optional configuration: LangSmith tracing
+
+LangSmith is optional.
+
+If you want tracing, add your own LangSmith key:
+
+```env
+LANGSMITH_API_KEY=your_actual_langsmith_api_key
+```
+
+and change:
+
+```env
+LANGSMITH_TRACING=false
 ```
 
 to:
 
 ```env
-LANGSMITH_TRACING=false
-```
-
-You can leave the LangSmith placeholder unchanged when tracing is disabled.
-
-A minimal `.env` therefore looks like:
-
-```env
-OPENAI_API_KEY='your_actual_openai_key'
-LANGSMITH_API_KEY='your_real_langsmith_key'
-
-OPENAI_MODEL=gpt-5.6-luna
-OPENAI_REASONING_EFFORT=none
-MAX_RETRIES=2
-
-LANGSMITH_TRACING=false
-LANGSMITH_PROJECT=multi-agent-mlops-platform
-```
-
-Save the file and close Notepad.
-
----
-
-## Optional configuration: enable LangSmith tracing
-
-If you also have a LangSmith API key, put it in:
-
-```env
-LANGSMITH_API_KEY='your_actual_langsmith_key'
-```
-
-and set:
-
-```env
 LANGSMITH_TRACING=true
 ```
 
-Example:
-
-```env
-OPENAI_API_KEY='your_actual_openai_key'
-LANGSMITH_API_KEY='your_actual_langsmith_key'
-
-OPENAI_MODEL=gpt-5.6-luna
-OPENAI_REASONING_EFFORT=none
-MAX_RETRIES=2
-
-LANGSMITH_TRACING=true
-LANGSMITH_PROJECT=multi-agent-mlops-platform
-```
-
-Some LangSmith accounts may also require a region-specific endpoint.
+Some LangSmith workspaces may also require a region-specific endpoint.
 
 For example, an EU workspace may require:
 
@@ -859,7 +927,7 @@ For example, an EU workspace may require:
 LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com
 ```
 
-Only add this if your LangSmith account requires it.
+Only enable or add LangSmith configuration if you actually want tracing.
 
 ---
 
@@ -868,7 +936,7 @@ Only add this if your LangSmith account requires it.
 Still inside the repository folder, and with `(.venv)` visible in the prompt, run:
 
 ```powershell
-pytest -v
+python -m pytest -v
 ```
 
 The tests should finish with all tests marked:
@@ -1162,7 +1230,7 @@ python -m uvicorn app.api.main:app --reload
 For the tests:
 
 ```powershell
-pytest -v
+python -m pytest -v
 ```
 
 ---
@@ -1181,10 +1249,13 @@ python -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
+Copy-Item .env.example .env
 notepad .env
 ```
 
-Add a valid OpenAI key and, for the minimum setup, use:
+Add your own valid OpenAI API key to `.env`.
+
+For the minimum setup, keep:
 
 ```env
 LANGSMITH_TRACING=false
@@ -1193,7 +1264,7 @@ LANGSMITH_TRACING=false
 Then:
 
 ```powershell
-pytest -v
+python -m pytest -v
 python run_investigation.py
 python -m uvicorn app.api.main:app --reload
 ```
@@ -1274,13 +1345,27 @@ OPENAI_API_KEY=...
 
 is missing, still a placeholder, or invalid.
 
-Open the file:
+Open your local configuration file:
 
 ```powershell
 notepad .env
 ```
 
 and check that you inserted your own valid OpenAI API key.
+
+The line should look exactly like:
+
+```env
+OPENAI_API_KEY=your_actual_openai_api_key
+```
+
+Use no spaces around `=` and no single or double quotes around the key.
+
+If `.env` does not exist yet, create it first:
+
+```powershell
+Copy-Item .env.example .env
+```
 
 ---
 
@@ -1295,6 +1380,14 @@ LANGSMITH_TRACING=false
 The application can run without LangSmith.
 
 If you do want tracing, verify the LangSmith API key and account region.
+
+Also verify that the `.env` line uses the exact format:
+
+```env
+LANGSMITH_API_KEY=your_actual_langsmith_api_key
+```
+
+with no spaces around `=` and no quotation marks around the value.
 
 An EU workspace may require:
 
@@ -1347,7 +1440,7 @@ This uses the configured OpenAI model.
 ## Automated tests
 
 ```powershell
-pytest -v
+python -m pytest -v
 ```
 
 Mocks replace external or LLM-heavy components where appropriate.
